@@ -1,7 +1,12 @@
 var cool = require('cool-ascii-faces');
 var express = require('express');
+var bodyParser = require('body-parser');
 var app = express();
 var pg = require('pg');
+
+var conString = "postgres://konstantinkunz:mamamia@localhost:5432/konstantinkunz";
+
+app.use(bodyParser.urlencoded({ extended: false }));
 
 app.set('port', (process.env.PORT || 5000));
 
@@ -20,8 +25,9 @@ app.get('/cool', function(request, response) {
 });
 
 app.get('/db', function (request, response) {
-  pg.connect(process.env.DATABASE_URL, function(err, client, done) {
-    client.query('SELECT * FROM test_table', function(err, result) {
+  //pg.connect(process.env.DATABASE_URL, function(err, client, done) {
+  pg.connect(conString, function(err, client, done) {
+    client.query('SELECT * FROM test_table2', function(err, result) {
       done();
       if (err)
       { console.error(err); response.send("Error " + err); }
@@ -29,7 +35,28 @@ app.get('/db', function (request, response) {
       { response.render('pages/db', {results: result.rows} ); }
     });
   });
-})
+});
+
+app.get('/input', function(request, response) {
+  response.render('pages/input');
+});
+
+// app.use(express.bodyParser.urlencoded());
+// app.use(bodyParser.json());
+
+app.post('/input', function(request, response){
+  var id = request.body.id;
+  var username = request.body.username;
+  pg.connect(conString, function(err, client, done) {
+    client.query("INSERT INTO test_table2 VALUES('" + id + "','" + username + "')", function(err, result) {
+      done();
+      if (err)
+      { console.error(err); response.send("Error " + err); }
+      else
+      { response.render('pages/db', {results: result.rows} ); }
+    });
+  });
+});
 
 app.listen(app.get('port'), function() {
   console.log('Node app is running on port', app.get('port'));
